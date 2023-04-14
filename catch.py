@@ -16,8 +16,8 @@ from matplotlib.patches import Rectangle
 import numpy as np
 from gym import spaces
 
-ACTION_EFFECTS = (-1, 0, 1) # left, idle right.
-OBSERVATION_TYPES = ['pixel','vector']
+ACTION_EFFECTS = (-1, 0, 1)  # left, idle right.
+OBSERVATION_TYPES = ['pixel', 'vector']
 
 class Catch():
     """
@@ -61,7 +61,7 @@ class Catch():
 
     def __init__(self, rows: int = 7, columns: int = 7, speed: float = 1.0,
                  max_steps: int = 250, max_misses: int = 10,
-                 observation_type: str = 'pixel', seed = None,
+                 observation_type: str = 'pixel', seed=None,
                  ):
         """ Arguments:
         rows: the number of rows in the environment grid.
@@ -90,7 +90,7 @@ class Catch():
         self.observation_type = observation_type
 
         # compute the drop interval
-        self.drop_interval = max(1,rows // speed) # compute the interval towards the next drop, can never drop below 1
+        self.drop_interval = max(1, rows // speed)  # compute the interval towards the next drop, can never drop below 1
         if speed != 1.0 and observation_type == 'vector':
             print('Warning: You use speed > 1.0, which means there may be multiple balls in the screen at the same time.' +
                   'However, with observation_type = vector, only the xy location of *lowest* ball is visible to the agent' +
@@ -101,7 +101,7 @@ class Catch():
         self.fig = None
         self.action_space = spaces.Discrete(3,)
         if self.observation_type == 'vector':
-            self.observation_space = spaces.Box(low=np.array((0,0,0)), high=np.array((self.columns, self.columns, self.rows)), dtype=int)
+            self.observation_space = spaces.Box(low=np.array((0, 0, 0)), high=np.array((self.columns, self.columns, self.rows)), dtype=int)
         elif self.observation_type == 'pixel':
             self.observation_space = spaces.Box(low=np.zeros((self.rows, self.columns, 2)), high=np.ones((self.rows, self.columns, 2)), dtype=int)
 
@@ -122,7 +122,7 @@ class Catch():
         s0 = self._get_state() # get first state
         return s0
 
-    def step(self,a):
+    def step(self, a):
         ''' Forward the environment one step based on provided action a '''
 
         # Check whether step is even possible
@@ -181,8 +181,8 @@ class Catch():
         # Set all colors to white
         for x in range(self.columns):
             for y in range(self.rows):
-                if self.paddle_xy == [x,y]: # hit the agent location
-                    if [x,y] in self.balls_xy: # agent caught a ball
+                if self.paddle_xy == [x,y]:  # hit the agent location
+                    if [x,y] in self.balls_xy:  # agent caught a ball
                         self.patches[x][y].set_color('g')
                     else:
                         self.patches[x][y].set_color('y')
@@ -196,7 +196,7 @@ class Catch():
         #plt.axis('off')
 
         self.label.set_text('Reward:  {:<5}            Total reward:  {:<5}     \nTotal misses: {:>2}/{:<2}     Timestep: {:>3}/{:<3}'.format(
-            self.r,self.total_reward,self.missed_balls,self.max_misses,self.total_timesteps,self.max_steps))
+            self.r, self.total_reward, self.missed_balls, self.max_misses, self.total_timesteps, self.max_steps))
 
         # Draw figure
         plt.pause(step_pause)
@@ -204,36 +204,36 @@ class Catch():
 
     def _initialize_plot(self):
         ''' initializes the catch environment figure '''
-        self.fig,self.ax = plt.subplots()
+        self.fig, self.ax = plt.subplots()
         self.fig.set_figheight(self.rows)
         self.fig.set_figwidth(self.columns)
         self.ax.set_aspect('equal', adjustable='box')
-        self.ax.set_xlim([0,self.columns])
-        self.ax.set_ylim([0,self.rows])
+        self.ax.set_xlim([0, self.columns])
+        self.ax.set_ylim([0, self.rows])
         self.ax.axes.xaxis.set_visible(False)
         self.ax.axes.yaxis.set_visible(False)
 
         self.patches = [ [[] for x in range(self.rows)] for y in range(self.columns)]
         for x in range(self.columns):
             for y in range(self.rows):
-                self.patches[x][y] = Rectangle((x, y),1,1, linewidth=0.0, color = 'k')
+                self.patches[x][y] = Rectangle((x, y), 1, 1, linewidth=0.0, color='k')
                 self.ax.add_patch(self.patches[x][y])
 
-        self.label = self.ax.text(0.01,self.rows + 0.2,'', fontsize=20, c='k')
+        self.label = self.ax.text(0.01, self.rows + 0.2, '', fontsize=20, c='k')
 
     def _drop_new_ball(self):
         ''' drops a new ball from the top '''
-        self.balls_xy.append([self._rng.randint(self.columns),self.rows-1])#0])
+        self.balls_xy.append([self._rng.randint(self.columns), self.rows-1])#0])
 
     def _get_state(self):
         ''' Returns the current agent observation '''
         if self.observation_type == 'vector':
             if len(self.balls_xy) > 0: # balls present
-                s = np.append(self.paddle_xy[0],self.balls_xy[0]).astype('float32') # paddle xy and ball xy
+                s = np.append(self.paddle_xy[0], self.balls_xy[0]).astype('float32') # paddle xy and ball xy
             else:
-                s = np.append(self.paddle_xy[0],[-1,-1]).astype('float32') # no balls, impute (-1,-1) in state for no ball present
+                s = np.append(self.paddle_xy[0], [-1, -1]).astype('float32') # no balls, impute (-1,-1) in state for no ball present
         elif self.observation_type == 'pixel':
-            s = np.zeros((self.columns,self.rows, 2), dtype=np.float32)
+            s = np.zeros((self.columns, self.rows, 2), dtype=np.float32)
             s[self.paddle_xy[0], self.paddle_xy[1], 0] = 1.0 # set paddle indicator in first slice
             for ball in self.balls_xy:
                 s[ball[0], ball[1], 1] = 1.0 # set ball indicator(s) in second slice
@@ -255,7 +255,7 @@ def test():
     env = Catch(rows=rows, columns=columns, speed=speed, max_steps=max_steps,
                 max_misses=max_misses, observation_type=observation_type, seed=seed)
     s = env.reset()
-    step_pause = 0.3 # the pause between each plot
+    step_pause = 0.3  # the pause between each plot
     env.render(step_pause)
 
     # Test
@@ -282,10 +282,10 @@ def test():
             else:
                 print("Switching to continuous random action selection.")
                 continuous_execution = True
-                a = np.random.randint(3) # sample random action
-        s_next,r,done = env.step(a) # execute action in the environment
+                a = np.random.randint(3)  # sample random action
+        s_next, r, done = env.step(a)  # execute action in the environment
         if print_details:
-            print("State {}, Action {}, Reward {}, Next state {}, Terminal {}".format(s,a,r,s_next,done))
+            print("State {}, Action {}, Reward {}, Next state {}, Terminal {}".format(s, a, r, s_next, done))
 
         env.render(step_pause)
         if done:
