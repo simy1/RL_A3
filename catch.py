@@ -10,7 +10,8 @@ Extended from Catch environment in Behavioural Suite: https://arxiv.org/pdf/1908
 """
 
 import matplotlib
-matplotlib.use('TkAgg') #'Qt5Agg') # 'TkAgg'
+# matplotlib.use('TkAgg') #'Qt5Agg') # 'TkAgg'
+matplotlib.use('Qt5Agg')  # 'TkAgg'
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 import numpy as np
@@ -47,7 +48,7 @@ class Catch():
     Reward function:
         - When we catch a ball when it reaches the bottom row, we get a reward of +1.
         - When we miss a ball that reaches the bottom row, we get a penalty of -1.
-        - All other situaties have a reward of 0.
+        - All other situations have a reward of 0.
 
     Dynamcics function:
         - Balls randomly drop from one of the possible positions on top of the screen.
@@ -150,9 +151,9 @@ class Catch():
             self.time_till_next_drop = self.drop_interval
 
         # Compute rewards
-        if (len(self.balls_xy) == 0) or (self.balls_xy[0][1] != 0): # no ball present at bottom row
+        if (len(self.balls_xy) == 0) or (self.balls_xy[0][1] != 0):  # no ball present at bottom row
             r = 0.0
-        elif self.balls_xy[0][0] == self.paddle_xy[0]: # ball and paddle location match, caught a ball
+        elif self.balls_xy[0][0] == self.paddle_xy[0]:  # ball and paddle location match, caught a ball
             r = 1.0
         else: # missed the ball
             r = -1.0
@@ -283,7 +284,7 @@ def test():
                 print("Switching to continuous random action selection.")
                 continuous_execution = True
                 a = np.random.randint(3)  # sample random action
-        s_next, r, done = env.step(a)  # execute action in the environment
+        s_next, r, done, _ = env.step(a)  # execute action in the environment
         if print_details:
             print("State {}, Action {}, Reward {}, Next state {}, Terminal {}".format(s, a, r, s_next, done))
 
