@@ -24,9 +24,6 @@ from torch import optim
 from catch import Catch
 #-------------------------------------------------------------------
 
-ACTION_EFFECTS = (-1, 0, 1) # left, idle right. 
-OBSERVATION_TYPES = ['pixel','vector']
-
 class Model():
     def __init__(self, observation_type, rows, columns):
         if observation_type == 'pixel':
@@ -70,7 +67,8 @@ def generateTrace(env, model, entropy_term):
             win_loss_ratio[1] += 1
 
         # for entropy regularization
-        entropy = -np.sum(np.mean(np.array(probs)) * np.log(np.array(probs)))
+        # entropy = -np.sum(np.mean(np.array(probs)) * np.log(np.array(probs)))
+        entropy = -np.sum(np.array(probs) * np.log(np.array(probs)))
         entropy_term += entropy
 
         states_trace.append(state)
