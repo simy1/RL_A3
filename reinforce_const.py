@@ -77,7 +77,7 @@ def generateTrace(env, model, entropy_term):
 
         state = torch.tensor(state_next, dtype=torch.float)
     
-    return states_trace,actions_trace,rewards_trace, win_loss_ratio
+    return states_trace,actions_trace,rewards_trace, win_loss_ratio, entropy_term
 
 
 def compute_discount_rewards(rewards_list, gamma):
@@ -112,7 +112,7 @@ def runReinforceAlgo(env=None, model=None, optimizer=None, gamma=0.9, iterations
         states_list, actions_list, rewards_list = [], [], []
 
         # generate a trace
-        states_list, actions_list, rewards_list, win_loss_ratio = generateTrace(env=env, model=model, entropy_term=entropy_term)
+        states_list, actions_list, rewards_list, win_loss_ratio, entropy_term = generateTrace(env=env, model=model, entropy_term=entropy_term)
         if print_details:
             print('Trace genrated . . . Done --> Length of trace: {} - win/loss ratio: {}/{}'.format(len(states_list), win_loss_ratio[0], win_loss_ratio[1]))
 
