@@ -229,7 +229,7 @@ class Catch():
     def _get_state(self):
         ''' Returns the current agent observation '''
         if self.observation_type == 'vector':
-            if len(self.balls_xy) > 0: # balls present
+            if len(self.balls_xy) > 0:  # balls present
                 s = np.append(self.paddle_xy[0], self.balls_xy[0]).astype('float32') # paddle xy and ball xy
             else:
                 s = np.append(self.paddle_xy[0], [-1, -1]).astype('float32') # no balls, impute (-1,-1) in state for no ball present
@@ -271,7 +271,7 @@ def test():
 
     for t in range(n_test_steps):
         if continuous_execution:
-            a = np.random.randint(3) # sample random action
+            a = np.random.randint(3)  # sample random action
         else:
             your_choice = input('Action (a/s/d):')
             if your_choice == 'a':
