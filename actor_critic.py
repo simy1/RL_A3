@@ -10,13 +10,14 @@ from torch.distributions import Categorical
 class Actor(nn.Module):
 
 
-    def __init__(self, n_input, n_actions, n_hidden):
+    def __init__(self, n_input, n_actions):
         super(Actor, self).__init__()
 
         self.n_actions = n_actions
+        self.n_hidden = 128
 
-        self.actor_linear1 = nn.Linear(n_input, n_hidden)
-        self.actor_linear2 = nn.Linear(n_hidden, n_actions)
+        self.actor_linear1 = nn.Linear(n_input, self.n_hidden)
+        self.actor_linear2 = nn.Linear(self.n_hidden, n_actions)
 
     def forward(self, state):
         policy_probs = F.relu(self.actor_linear1(state))
@@ -27,13 +28,14 @@ class Actor(nn.Module):
 class Critic(nn.Module):
 
 
-    def __init__(self, n_input, n_actions, n_hidden):
+    def __init__(self, n_input, n_actions):
         super(Critic, self).__init__()
 
         self.n_actions = n_actions
+        self.n_hidden = 128
 
-        self.critic_linear1 = nn.Linear(n_input, n_hidden)
-        self.critic_linear2 = nn.Linear(n_hidden, 1) # only 1 state-value
+        self.critic_linear1 = nn.Linear(n_input, self.n_hidden)
+        self.critic_linear2 = nn.Linear(self.n_hidden, 1) # only 1 state-value
 
     def forward(self, state):
         value = F.relu(self.critic_linear1(state))
@@ -41,7 +43,7 @@ class Critic(nn.Module):
 
         return value
 
-def run_episodes(bootstrap=True, baseline_subtraction=True, n_episodes=1000, n_boot=1, gamma=0.99, entropy_reg_strength=0.01):
+def run_episodes(env, actor, critic, actor_optimizer, critic_optimizer, bootstrap=True, baseline_subtraction=True, n_episodes=1000, n_boot=1, gamma=0.99, entropy_reg_strength=0.01):
     # define the variables that are used for model evaluation at the end
     rewards_per_episode = []
     epsilon = np.finfo(np.float32).eps.item()  # smallest possible value that won't get rounded off
@@ -135,20 +137,31 @@ def run_episodes(bootstrap=True, baseline_subtraction=True, n_episodes=1000, n_b
 
 if __name__ == '__main__':
     # initialize the environment and create the neural network
-    env = catch.Catch(max_steps=250)
+    rows = 7
+    columns = 7
+    speed = 1.0
+    max_steps = 250
+    max_misses = 10
+    observation_type = 'pixel'  # 'vector'
+    seed = None
+    gamma = 0.99
+    learning_rate = 0.01
+
+    env = catch.Catch(rows=rows, columns=columns, speed=speed, max_steps=max_steps,
+                max_misses=max_misses, observation_type=observation_type, seed=seed)
     state = env.reset()
     n_input = len(state.flatten())
     state = torch.from_numpy(state.flatten()).float().unsqueeze(0) # convert to tensor
     n_actions = env.action_space.n
-    n_hidden = 128
-    learning_rate = 0.01
-    actor = Actor(n_input=n_input, n_actions=n_actions, n_hidden=n_hidden)
-    critic = Critic(n_input=n_input, n_actions=n_actions, n_hidden=n_hidden)
+    actor = Actor(n_input=n_input, n_actions=n_actions)
+    critic = Critic(n_input=n_input, n_actions=n_actions)
     actor_optimizer = optim.Adam(actor.parameters(), lr=learning_rate)
     critic_optimizer = optim.Adam(critic.parameters(), lr=learning_rate)
 
     # perform the algorithm
-    rewards_per_episode = run_episodes(bootstrap=True, baseline_subtraction=True, n_episodes=1000, n_boot=5, gamma=0.99, entropy_reg_strength=0.01)
+    rewards_per_episode = run_episodes(env=env, actor=actor, critic=critic, actor_optimizer=actor_optimizer,
+                                       critic_optimizer=critic_optimizer, bootstrap=True, baseline_subtraction=True,
+                                       n_episodes=1000, n_boot=5, gamma=0.99, entropy_reg_strength=0.1)
 
     # temporary performance check
     plt.figure()
