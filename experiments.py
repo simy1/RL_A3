@@ -62,7 +62,7 @@ def experiment(exp):
         settings['seed'] = None
         settings['speed'] = 1
         settings['gamma'] = 0.99
-        settings['iterations'] = 5#1_000
+        settings['iterations'] = 1_000
         settings['print_details'] = False
         settings['n_reps'] = 10
 
