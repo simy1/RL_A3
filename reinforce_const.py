@@ -21,6 +21,7 @@ from gym import spaces
 import torch
 from torch import nn
 from torch import optim
+from tqdm import tqdm
 from catch import Catch
 #-------------------------------------------------------------------
 
@@ -57,7 +58,7 @@ def generateTrace(env, model, entropy_term):
         distribution = torch.distributions.Categorical(probs=probs)
         action = distribution.sample().item()
         state_next,reward,done,_ = env.step(action)
-        env.render(step_pause)          # visualize the procedure during training
+        # env.render(step_pause)          # visualize the procedure during training
 
         if reward == 0:
             pass
@@ -81,8 +82,7 @@ def generateTrace(env, model, entropy_term):
 
         state = torch.tensor(state_next, dtype=torch.float)
 
-    print('sum_rewards: ',sum_rewards)
-    return states_trace,actions_trace,rewards_trace, win_loss_ratio, entropy_term
+    return states_trace,actions_trace,rewards_trace, win_loss_ratio, entropy_term, sum_rewards
 
 
 def compute_discount_rewards(rewards_list, gamma):
@@ -95,7 +95,7 @@ def compute_discount_rewards(rewards_list, gamma):
     return disc_rewards
 
 
-def update_policy(states_list, actions_list, g_list, model, optimizer, eta, entropy_term):
+def update_policy(states_list, actions_list, g_list, model, optimizer, eta, entropy_term, print_details):
     loss_stored = []
     for state, action, G in zip(states_list, actions_list, g_list):
         probs = model.predict(state)
@@ -105,27 +105,31 @@ def update_policy(states_list, actions_list, g_list, model, optimizer, eta, entr
         loss = - log_prob*G
         loss = loss - eta * entropy_term
 
-        print('probs = {}'.format(probs))
-        print('log_prob = {} // G = {} '.format(log_prob, G))
+        if print_details:
+            print('probs = {}'.format(probs))
+            print('log_prob = {} // G = {} '.format(log_prob, G))
+
         loss_stored.append(loss)
 
         optimizer.zero_grad()
         loss.backward()         # calculate gradients
         optimizer.step()        # apply gradients
 
-    print('losses found: ', loss_stored)
+    if print_details:
+        print('losses found: ', loss_stored)
 
 
 def runReinforceAlgo(env=None, model=None, optimizer=None, gamma=0.9, iterations=1000, eta=0.001, print_details=False):
     entropy_term = 0
-    iteration = 1
-    print('Enabling REINFORCE algorithm . . .')
-    while iteration <= iterations:
+    rewards_per_episode = []
+    # print('Enabling REINFORCE algorithm . . .')
+    for _ in range(iterations):
         # initialization
         states_list, actions_list, rewards_list = [], [], []
 
         # generate a trace
-        states_list, actions_list, rewards_list, win_loss_ratio, entropy_term = generateTrace(env=env, model=model, entropy_term=entropy_term)
+        states_list, actions_list, rewards_list, win_loss_ratio, entropy_term, sum_rewards = generateTrace(env=env, model=model, entropy_term=entropy_term)
+        rewards_per_episode.append(sum_rewards)
         if print_details:
             print('Trace genrated . . . Done --> Length of trace: {} - win/loss ratio: {}/{}'.format(len(states_list), win_loss_ratio[0], win_loss_ratio[1]))
 
@@ -136,9 +140,9 @@ def runReinforceAlgo(env=None, model=None, optimizer=None, gamma=0.9, iterations
 
         # update the policy
         # print('Updating the policy . . .')
-        update_policy(states_list=states_list, actions_list=actions_list, g_list=g_list, model=model, optimizer=optimizer, eta=eta, entropy_term=entropy_term)
+        update_policy(states_list=states_list, actions_list=actions_list, g_list=g_list, model=model, optimizer=optimizer, eta=eta, entropy_term=entropy_term, print_details=print_details)
 
-        iteration += 1
+    return rewards_per_episode
     
 
 if __name__ == '__main__':
@@ -151,27 +155,32 @@ if __name__ == '__main__':
     observation_type = 'pixel'      # 'vector'
     seed = None
     gamma = 0.99
-    lr = 0.01
+    lr = 0.001
 
     # Initialize environment, model, optimizer
     env = Catch(rows=rows, columns=columns, speed=speed, max_steps=max_steps,
                 max_misses=max_misses, observation_type=observation_type, seed=seed)
     s = env.reset()
-    step_pause = 0.2 # the pause between each plot
-    env.render(step_pause) 
+    # step_pause = 0.2 # the pause between each plot
+    # env.render(step_pause) 
 
     model = Model(observation_type, rows, columns)
 
     optimizer = optim.Adam(model.neuralnetwork.parameters(), lr=lr)
     
     # Run REINFORCE
-    iterations = 10
+    iterations = 1_000
     eta = 0.1
-    print_details = True
-    runReinforceAlgo(env=env, 
-                     model=model, 
-                     optimizer=optimizer,
-                     gamma=gamma,
-                     iterations=iterations, 
-                     eta=eta,
-                     print_details=print_details)
+    print_details = False
+    rewards_per_episode = runReinforceAlgo(env=env,
+                                           model=model, 
+                                           optimizer=optimizer,
+                                           gamma=gamma,
+                                           iterations=iterations, 
+                                           eta=eta,
+                                           print_details=print_details)
+    
+    x_axis = [i for i in range(1,iterations+1)]
+    plt.plot(x_axis, rewards_per_episode)
+    plt.savefig('example_graph.png')
+    plt.show()
