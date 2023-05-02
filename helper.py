@@ -19,7 +19,7 @@ class LearningCurvePlot:
 
     def __init__(self, title=None):
         self.fig, self.ax = plt.subplots()
-        self.ax.set_xlabel('Time')
+        self.ax.set_xlabel('Episode')
         self.ax.set_ylabel('Reward')      
         if title is not None:
             self.ax.set_title(title)
@@ -87,7 +87,7 @@ def plot_smooth(exp, smooth_win):
     if exp == 'part1_reinforce':
         plot = LearningCurvePlot(title=r'REINFORCE: exploring learning rate and $\eta$')
     elif exp == 'part1_actorcritic':
-        plot = LearningCurvePlot(title=r'Actor Critic: exploring learning rate and $\eta$')
+        plot = LearningCurvePlot(title='Actor-Critic + baseline subtraction')
 
     file_dir = os.path.dirname(__file__)
     central_path = file_dir +'/'+ exp
