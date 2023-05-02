@@ -85,9 +85,9 @@ def saveResults(exp, comb, reward_results):
 
 def plot_smooth(exp, smooth_win):
     if exp == 'part1_reinforce':
-        plot = LearningCurvePlot(title='REINFORCE: exploring learning rate and eta')
+        plot = LearningCurvePlot(title=r'REINFORCE: exploring learning rate and $\eta$')
     elif exp == 'part1_actorcritic':
-        plot = LearningCurvePlot(title='Actor Critic: exploring learning rate and eta')
+        plot = LearningCurvePlot(title=r'Actor Critic: exploring learning rate and $\eta$')
 
     file_dir = os.path.dirname(__file__)
     central_path = file_dir +'/'+ exp
@@ -99,7 +99,8 @@ def plot_smooth(exp, smooth_win):
         a_file.close()
 
         learning_curve = np.mean(reward_results, axis=0)  # average over repetitions
-        learning_curve = smooth(learning_curve, smooth_win)  # additional smoothing
+        if smooth_win != False:
+            learning_curve = smooth(learning_curve, smooth_win)  # additional smoothing
         learning_curve_std = np.std(reward_results, axis=0)
         plot.add_curve(learning_curve, label=r'lr:{}, eta:{}'.format(list(x_dict.keys())[0][0], list(x_dict.keys())[0][1]))
         plot.add_confidence_interval(learning_curve, learning_curve_std)
