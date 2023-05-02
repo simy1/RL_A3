@@ -20,10 +20,10 @@ from actor_critic import *
 
 def average_over_repetitions(exp, settings, comb, smoothing_window=5):
 
-    reward_results = [] # Result array
+    reward_results = []  # Result array
     now = time.time()
     
-    for _ in range(settings['n_reps']): # Loop over repetitions
+    for _ in range(settings['n_reps']):  # Loop over repetitions
         if exp == 'part1_reinforce':
             env = Catch(rows=settings['rows'], columns=settings['columns'], speed=settings['speed'], max_steps=settings['max_steps'],
                     max_misses=settings['max_misses'], observation_type=settings['observation_type'], seed=settings['seed'])
@@ -61,13 +61,15 @@ def average_over_repetitions(exp, settings, comb, smoothing_window=5):
 
         reward_results.append(rewards_per_episode)
 
+
     # save the results for this combination(comb) and for all repetitions(settings['n_reps'])
     saveResults(exp, comb, reward_results)
         
     print('Running one setting takes {} minutes'.format((time.time()-now)/60))    
-    learning_curve = np.mean(reward_results,axis=0) # average over repetitions
-    learning_curve = smooth(learning_curve,smoothing_window) # additional smoothing
-    return learning_curve  
+    learning_curve = np.mean(reward_results, axis=0)  # average over repetitions
+    learning_curve = smooth(learning_curve, smoothing_window)  # additional smoothing
+    learning_curve_std = np.std(reward_results, axis=0)
+    return learning_curve, learning_curve_std
 
 
 def experiment(exp):
@@ -103,8 +105,9 @@ def experiment(exp):
         Plot = LearningCurvePlot(title = 'REINFORCE: exploring learning rate and eta') 
         for comb in tqdm(combinations):
             print('combination running:{}'.format(comb))
-            learning_curve = average_over_repetitions(exp=exp, settings=settings, comb=comb, smoothing_window=5)
-            Plot.add_curve(learning_curve,label=r'lr:{}, eta:{}'.format(comb[0], comb[1]))
+            learning_curve, learning_curve_std = average_over_repetitions(exp=exp, settings=settings, comb=comb, smoothing_window=5)
+            Plot.add_curve(learning_curve, label=r'lr:{}, eta:{}'.format(comb[0], comb[1]))
+            Plot.add_confidence_interval(learning_curve, learning_curve_std)
         Plot.save('{}.png'.format(exp))
 
     elif exp == 'part1_actorcritic':
@@ -140,16 +143,20 @@ def experiment(exp):
         print('Start experiments with Actor-Critic algorithm ({} repetitions)'.format(settings['n_reps']))
         print('{} total experiments with combinations: {}'.format(len(combinations), combinations))
 
-        Plot = LearningCurvePlot(title = 'Actor-Critic: exploring learning rate and eta')
+        Plot = LearningCurvePlot(title='Actor-Critic: exploring learning rate and eta')
         for comb in tqdm(combinations):
             print('combination running:{}'.format(comb))
-            learning_curve = average_over_repetitions(exp=exp, settings=settings, comb=comb, smoothing_window=5)
-            Plot.add_curve(learning_curve,label=r'lr:{}, eta:{}'.format(comb[0], comb[1]))
+            learning_curve, learning_curve_std = average_over_repetitions(exp=exp, settings=settings, comb=comb, smoothing_window=5)
+            Plot.add_curve(learning_curve, label=r'lr:{}, eta:{}'.format(comb[0], comb[1]))
+            Plot.add_confidence_interval(learning_curve, learning_curve_std)
         Plot.save('{}.png'.format(exp))
 
 
 if __name__ == '__main__':
-    exp = 'part1_actorcritic'
-    experiment(exp)
+    options = ['part1_reinforce', 'part1_actorcritic']
+
+    for exp in options:
+        print(exp)
+        experiment(exp)
 
     # plot_smooth(exp,5)  # plot produced results with different smoothing window
