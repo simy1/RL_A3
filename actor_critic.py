@@ -43,7 +43,8 @@ class Critic(nn.Module):
 
         return value
 
-def run_episodes(env, actor, critic, actor_optimizer, critic_optimizer, bootstrap=True, baseline_subtraction=True, n_episodes=1000, n_boot=1, gamma=0.99, entropy_reg_strength=0.01):
+def run_episodes(env, actor, critic, actor_optimizer, critic_optimizer, bootstrap=True, baseline_subtraction=True,
+                 n_episodes=1000, n_boot=1, gamma=0.99, entropy_reg_strength=0.01):
     # define the variables that are used for model evaluation at the end
     rewards_per_episode = []
     epsilon = np.finfo(np.float32).eps.item()  # smallest possible value that won't get rounded off
@@ -134,6 +135,7 @@ def run_episodes(env, actor, critic, actor_optimizer, critic_optimizer, bootstra
         critic_optimizer.step()
 
     return rewards_per_episode
+
 
 if __name__ == '__main__':
     # initialize the environment and create the neural network
