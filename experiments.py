@@ -154,9 +154,9 @@ def experiment(exp):
 
 if __name__ == '__main__':
     options = ['part1_reinforce', 'part1_actorcritic']
+    #
+    # for exp in options:
+    #     print(exp)
+    #     experiment(exp)
 
-    for exp in options:
-        print(exp)
-        experiment(exp)
-
-    # plot_smooth(exp,5)  # plot produced results with different smoothing window
+    plot_smooth('part1_actorcritic', 5)  # plot produced results with different smoothing window
