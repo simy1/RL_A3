@@ -120,13 +120,13 @@ def experiment(exp):
         settings['gamma'] = 0.99
         settings['iterations'] = 1_000
         settings['print_details'] = False
-        settings['n_reps'] = 1
+        settings['n_reps'] = 10
         settings['bootstrap'] = True
         settings['baseline_subtraction'] = True
 
         # variables (alter for each experiment)
-        lr_list = [0.01]
-        eta_list = [0.1]
+        lr_list = [0.1, 0.01, 0.001]
+        eta_list = [0.25, 0.1, 0.01]
         n_boot_list = [5]
 
         # setup experiments

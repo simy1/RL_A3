@@ -80,7 +80,9 @@ def saveResults(exp, comb, reward_results):
 
 def plot_smooth(exp, smooth_win):
     if exp == 'part1_reinforce':
-        Plot = LearningCurvePlot(title = 'REINFORCE: exploring learning rate and eta') 
+        Plot = LearningCurvePlot(title = 'REINFORCE: exploring learning rate and eta')
+    if exp == 'part1_actorcritic':
+        Plot = LearningCurvePlot(title = 'Actor-Critic: exploring learning rate and eta')
 
     file_dir = os.path.dirname(__file__)
     central_path = file_dir +'/'+ exp
