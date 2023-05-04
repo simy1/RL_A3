@@ -92,6 +92,11 @@ def compute_discount_rewards(rewards_list, gamma):
         for k,r in enumerate(rewards_list[t:]):
             G += (gamma**k)*r
         disc_rewards.append(G)
+
+    # normalization
+    disc_rewards = torch.tensor(disc_rewards)
+    disc_rewards = (disc_rewards - disc_rewards.mean()) / (disc_rewards.std() + np.finfo(np.float32).eps.item())
+
     return disc_rewards
 
 
@@ -170,7 +175,7 @@ if __name__ == '__main__':
     
     # Run REINFORCE
     iterations = 1_000
-    eta = 0.1
+    eta = 0.25
     print_details = False
     rewards_per_episode = runReinforceAlgo(env=env,
                                            model=model, 
