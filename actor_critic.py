@@ -106,22 +106,31 @@ def run_episodes(env, actor, critic, actor_optimizer, critic_optimizer, bootstra
             for r in episode_rewards[::-1]: # sum backwards to make the computation more efficient
                 estimated_Q = estimated_Q*gamma + r
                 estimated_Q_values.insert(0, estimated_Q) # insert it at the start because we are working backwards
-
-        # normalize the estimated cumulative reward
-        estimated_Q_values = torch.tensor(estimated_Q_values)
-        estimated_Q_values = (estimated_Q_values - estimated_Q_values.mean()) / (estimated_Q_values.std() + epsilon)
-        #estimated_Q_values = torch.tensor(estimated_Q_values)
+            estimated_Q_values = torch.tensor(estimated_Q_values)
 
         # compute the actor losses and critic losses
         actor_losses = []
         critic_losses = []
-        for t in range(len(estimated_Q_values)):
-            if baseline_subtraction:
-                advantage = estimated_Q_values[t] - episode_values[t]
-                actor_losses.append(-episode_log_action_prob[t] * advantage - entropy_reg_strength * episode_entropies[t])
-            else:
-                actor_losses.append(-episode_log_action_prob[t] * estimated_Q_values[t] - entropy_reg_strength * episode_entropies[t])
-            critic_losses.append(F.mse_loss(estimated_Q_values[t], episode_values[t]))
+        advantages = []
+        if baseline_subtraction:
+            # compute and normalize the advantage
+            for t in range(len(estimated_Q_values)):
+                estimated_Q_t = estimated_Q_values[t]
+                episode_values_t = episode_values[t]
+                advantages.append(estimated_Q_t - episode_values_t)
+                critic_losses.append(F.mse_loss(estimated_Q_t, episode_values_t))
+            advantages = torch.tensor(advantages)
+            advantages = (advantages - advantages.mean()) / (advantages.std() + epsilon)
+            for t in range(len(estimated_Q_values)):
+                actor_losses.append(-episode_log_action_prob[t] * advantages[t] - entropy_reg_strength * episode_entropies[t])
+        else:
+            # normalize the estimated cumulative reward
+            estimated_Q_values = torch.tensor(estimated_Q_values)
+            estimated_Q_values = (estimated_Q_values - estimated_Q_values.mean()) / (estimated_Q_values.std() + epsilon)
+            for t in range(len(estimated_Q_values)):
+                estimated_Q_t = estimated_Q_values[t]
+                actor_losses.append(-episode_log_action_prob[t] * estimated_Q_t - entropy_reg_strength * episode_entropies[t])
+                critic_losses.append(F.mse_loss(estimated_Q_t, episode_values[t]))
 
         actor_losses = torch.stack(actor_losses).sum()
         critic_losses = torch.stack(critic_losses).sum()

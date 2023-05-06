@@ -13,18 +13,18 @@ import itertools
 from torch import optim
 
 from catch import Catch
-from reinforce_const import Model, runReinforceAlgo
+from reinforce import Model, runReinforceAlgo
 from helper import LearningCurvePlot, smooth, saveResults, plot_smooth
 from actor_critic import *
 
 
-def average_over_repetitions(exp, settings, comb, smoothing_window=5):
+def average_over_repetitions(exp, settings, comb):
 
     reward_results = []  # Result array
     now = time.time()
     
     for _ in range(settings['n_reps']):  # Loop over repetitions
-        if exp == 'part1_reinforce':
+        if exp == 'reinforce':
             env = Catch(rows=settings['rows'], columns=settings['columns'], speed=settings['speed'], max_steps=settings['max_steps'],
                     max_misses=settings['max_misses'], observation_type=settings['observation_type'], seed=settings['seed'])
             s = env.reset()
@@ -40,9 +40,9 @@ def average_over_repetitions(exp, settings, comb, smoothing_window=5):
                                                    eta=comb[1],
                                                    print_details=settings['print_details'])
 
-        elif exp == 'part1_actorcritic':
-            env = Catch(rows=settings['rows'], columns=settings['columns'], speed=settings['speed'], max_steps=settings['max_steps'],
-                    max_misses=settings['max_misses'], observation_type=settings['observation_type'], seed=settings['seed'])
+        elif exp == 'actorcritic':
+            env = Catch(rows=comb[3], columns=comb[4], speed=comb[6], max_steps=settings['max_steps'],
+                    max_misses=settings['max_misses'], observation_type=comb[5], seed=settings['seed'])
             state = env.reset()
             n_input = len(state.flatten())
             state = torch.from_numpy(state.flatten()).float().unsqueeze(0)  # convert to tensor
@@ -66,14 +66,12 @@ def average_over_repetitions(exp, settings, comb, smoothing_window=5):
     saveResults(exp, comb, reward_results)
         
     print('Running one setting takes {} minutes'.format((time.time()-now)/60))    
-    learning_curve = np.mean(reward_results, axis=0)  # average over repetitions
-    learning_curve = smooth(learning_curve, smoothing_window)  # additional smoothing
-    learning_curve_std = np.std(reward_results, axis=0)
-    return learning_curve, learning_curve_std
+
+    return
 
 
 def experiment(exp):
-    if exp == 'part1_reinforce':
+    if exp == 'reinforce':
         # settings (fixed/constant during experiments)
         settings = dict()
         settings['rows'] = 7
@@ -102,61 +100,51 @@ def experiment(exp):
         print('Start experiments with REINFORCE algorithm ({} repetitions)'.format(settings['n_reps']))
         print('{} total experiments with combinations: {}'.format(len(combinations), combinations))
 
-        Plot = LearningCurvePlot(title = 'REINFORCE: exploring learning rate and eta') 
         for comb in tqdm(combinations):
-            print('combination running:{}'.format(comb))
-            learning_curve, learning_curve_std = average_over_repetitions(exp=exp, settings=settings, comb=comb, smoothing_window=5)
-            Plot.add_curve(learning_curve, label=r'lr:{}, eta:{}'.format(comb[0], comb[1]))
-            Plot.add_confidence_interval(learning_curve, learning_curve_std)
-        Plot.save('{}.png'.format(exp))
+            average_over_repetitions(exp, settings, comb)
 
-    elif exp == 'part1_actorcritic':
+    elif exp == 'actorcritic':
         # settings (fixed/constant during experiments)
         settings = dict()
-        settings['rows'] = 7
-        settings['columns'] = 7
         settings['max_steps'] = 250
         settings['max_misses'] = 10
-        settings['observation_type'] = 'pixel'
         settings['seed'] = None
-        settings['speed'] = 1
         settings['gamma'] = 0.99
         settings['iterations'] = 1_000
-        settings['print_details'] = False
         settings['n_reps'] = 10
         settings['bootstrap'] = True
         settings['baseline_subtraction'] = True
 
         # variables (alter for each experiment)
-        lr_list = [0.1, 0.01, 0.001]
-        eta_list = [0.25, 0.1, 0.01]
-        n_boot_list = [5]
+        lr_list = [0.01]
+        eta_list = [0.25]
+        n_boot_list = [3]
+        rows = [7]
+        columns = [7]
+        observation_type = ['pixel']
+        speed = [1]
 
         # setup experiments
         configs = []
         configs.append(lr_list)
         configs.append(eta_list)
         configs.append(n_boot_list)
+        configs.append(rows)
+        configs.append(columns)
+        configs.append(observation_type)
+        configs.append(speed)
         combinations = list(itertools.product(*configs))
 
         # print message
         print('Start experiments with Actor-Critic algorithm ({} repetitions)'.format(settings['n_reps']))
         print('{} total experiments with combinations: {}'.format(len(combinations), combinations))
 
-        Plot = LearningCurvePlot(title='Actor-Critic: exploring learning rate and eta')
         for comb in tqdm(combinations):
-            print('combination running:{}'.format(comb))
-            learning_curve, learning_curve_std = average_over_repetitions(exp=exp, settings=settings, comb=comb, smoothing_window=5)
-            Plot.add_curve(learning_curve, label=r'lr:{}, eta:{}'.format(comb[0], comb[1]))
-            Plot.add_confidence_interval(learning_curve, learning_curve_std)
-        Plot.save('{}.png'.format(exp))
+            average_over_repetitions(exp,settings,comb)
 
 
 if __name__ == '__main__':
-    options = ['part1_reinforce', 'part1_actorcritic']
-    #
-    # for exp in options:
-    #     print(exp)
-    #     experiment(exp)
+    exp = 'actorcritic'
+    experiment(exp)
 
-    plot_smooth('part1_actorcritic', 5)  # plot produced results with different smoothing window
+    plot_smooth(exp, False)  # plot produced results with different smoothing window
