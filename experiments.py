@@ -146,19 +146,19 @@ def experiment(exp):
 if __name__ == '__main__':
     # =========== part 1 reinforce =============
     exp = 'part1_reinforce'
-    # plot_smooth(exp, False)  # plot produced results with different smoothing window
+    plot_smooth(exp, False)  # plot produced results with different smoothing window
 
 
     # =========== part 1 actor critic =============
     ac_exps = ['AC_baseline tuning', 'AC_both tuning', 'AC_boot tuning']
-    # for exp in ac_exps:
-    #     plot_smooth(exp, False)  # plot produced results with different smoothing window
+    for exp in ac_exps:
+        plot_smooth(exp, False)  # plot produced results with different smoothing window
 
 
     # =========== actor critic bootstrap =============
     bootstrap_exps = ['n_boot\AC_baseline', 'n_boot\AC_boot', 'n_boot\AC_both']
-    # for exp in bootstrap_exps:
-    #     plot_smooth(exp, False)  # plot produced results with different smoothing window
+    for exp in bootstrap_exps:
+        plot_smooth(exp, False)  # plot produced results with different smoothing window
 
     env_exp = ['vector', 'speed', 'sizes', 'combine', 'other']
     for exp in env_exp:

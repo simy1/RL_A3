@@ -52,8 +52,13 @@ class LearningCurvePlot:
         self.ax.legend(bbox_to_anchor=(1, 1), title=legend_title, alignment='left')
         self.fig.savefig(name, dpi=300)
 
-def get_height(rows=7, columns=7, speed=1):
-    return int((250-rows+2) / int(rows/speed))
+def get_height(rows: int = 7, speed: float = 1):
+    """returns value for the maximal reward possible in the environent, depending on the number of rows
+    and speed of new balls being dropped
+    :param rows: number of rows in the environment
+    :param speed: speed setting of the environment
+    """
+    return int((250-rows+1)/int(rows/speed)+1)
 
 def smooth(y, window, poly=1):
     '''
@@ -90,7 +95,6 @@ def saveResults(exp, comb, reward_results):
     a_file.close()
 
 def plot_smooth(exp, smooth_win):
-    print(f'exp = {exp}')
     file_dir = os.path.dirname(__file__)
 
     if exp == 'part1_reinforce':
@@ -141,7 +145,6 @@ def plot_smooth(exp, smooth_win):
             target_f = central_path + chr(92) + f
             a_file = open(target_f, 'rb')
             x_dict = pickle.load(a_file)
-            print(x_dict)
             reward_results = x_dict[list(x_dict.keys())[0]]
             exp_settings = list(x_dict.keys())[0]
             a_file.close()
@@ -169,7 +172,7 @@ def plot_smooth(exp, smooth_win):
     if exp != 'other':
         plot.add_hline(height=get_height(rows=7, speed=1))
     if exp == 'other':
-        plot.add_hline(height=get_height(rows=3, speed=2))
+        plot.add_hline(height=get_height(rows=7, speed=2))
     if exp == 'sizes':
         plot.add_hline(height=get_height(rows=10, speed=1))
         plot.add_hline(height=get_height(rows=3, speed=1))
