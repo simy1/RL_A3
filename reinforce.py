@@ -1,13 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Custamizable Catch Environment
-By Thomas Moerland
-Leiden University, The Netherlands
-2022
 
-Extended from Catch environment in Behavioural Suite: https://arxiv.org/pdf/1908.03568.pdf
-"""
 
 import matplotlib
 matplotlib.use('TkAgg') #'Qt5Agg') # 'TkAgg'
@@ -150,7 +143,7 @@ def update_policy(states_list, actions_list, g_list, model, optimizer, eta, entr
         print('losses found: ', loss_stored)
 
 
-def runReinforceAlgo(env=None, model=None, optimizer=None, gamma=0.9, iterations=1000, eta=0.001, print_details=False):
+def runReinforceAlgo(env=None, model=None, optimizer=None, gamma=0.9, iterations=1000, eta=0.001, print_details=False, calculate_variance=False):
     '''
     Function for running the REINFORCE algorithm. For a number of iterations we do 3 things: (a) generate a trace, 
     (b) compute the discount rewards and (c) update the policy.
@@ -165,7 +158,11 @@ def runReinforceAlgo(env=None, model=None, optimizer=None, gamma=0.9, iterations
     entropy_term = 0
     rewards_per_episode = []
     # print('Enabling REINFORCE algorithm . . .')
-    for _ in range(iterations):
+
+    if calculate_variance:
+        layer_means = np.zeros((4, iterations))
+
+    for iteration in range(iterations):
         # initialization
         states_list, actions_list, rewards_list = [], [], []
 
@@ -180,12 +177,25 @@ def runReinforceAlgo(env=None, model=None, optimizer=None, gamma=0.9, iterations
         g_list = []
         g_list = compute_discount_rewards(rewards_list=rewards_list, gamma=gamma)
 
+        if calculate_variance
+            state_dict = model.neuralnetwork.state_dict()
+            for i, (layer_name, layer_params) in enumerate(state_dict.items()):
+                layer = np.array(layer_params)
+                layer_means[i, iteration] = np.mean(layer)
+
+
         # update the policy
         # print('Updating the policy . . .')
         update_policy(states_list=states_list, actions_list=actions_list, g_list=g_list, model=model, optimizer=optimizer, eta=eta, entropy_term=entropy_term, print_details=print_details)
 
+    if calculate_variance:
+        return layer_means
+
     return rewards_per_episode
-    
+
+def calculate_reinforce_variance(num_runs = 10):
+
+
 
 if __name__ == '__main__':
     # Set hyperparameters 
@@ -211,9 +221,9 @@ if __name__ == '__main__':
     optimizer = optim.Adam(model.neuralnetwork.parameters(), lr=lr)
     
     # Run REINFORCE
-    iterations = 1_000
+    iterations = 10  # 1_000
     eta = 0.25
-    print_details = False
+    print_details = True  # False
     rewards_per_episode = runReinforceAlgo(env=env,
                                            model=model, 
                                            optimizer=optimizer,
@@ -230,3 +240,9 @@ if __name__ == '__main__':
     plt.title('REINFORCE')
     plt.savefig('REINFORCE.png')
     plt.show()
+
+
+    # ======================================================================================================
+    # does reinforce suffer from high variance?
+    num_independent_runs = 10
+
