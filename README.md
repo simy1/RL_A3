@@ -12,11 +12,11 @@ This project shows how policy-based algorithms deal with the Catch Environment. 
 
 - reinforce.py: This file hosts the implementatinon of the REINFORCE algorithm. We can run the program with the default (best) hyperparameters or change them. The program runs from the command line (see section 'How to run') and when it finishes it illustrates and saves the performance of the algorithm using a graph (x-axis: episodes, y-axis: reward per episode).
 
-- actor_critic.py:
+- actor_critic.py: This file contains the code needed for the Actor-Critic algorithm. Check the section 'How to run' in order to enable or disable flags related to bootstrapping and baseline subtraction. When the code ends, it shows and saves a figure which depicts the performance of the algorithm for this problem (x-axis: episodes, y-axis: reward per episode).
+
+- helper.py: This file consists of functions that consider to be helpful to either run one of the mentioned algorithms or carry out experiments. In addition, this python file can be used to vizualise results from experiments that are already performed. Some of the functions provided have to do with getting and controlling the input command line from terminal, others for saving the data for future use (such as plotting figures). 
 
 - experiments.py:
-
-- helper.py:
 
 - ppo_clip.py: [PPO here].
 
@@ -28,21 +28,12 @@ This project shows how policy-based algorithms deal with the Catch Environment. 
 - Single run of the REINFORCE algorithm:    
     - python reinforce.py
 
-
-
-
-
-
-- Tune hyperparams:                   python hyperparam_tune.py
-
-- Make plots:                         python [fullpath/]visualize.py
-This code access already stored files. Thus in case you make a new virtual environment to run the code, you have to specify the fullpath of the python file to be able to actually retrieve the files (for safety reasons). 
-
-- Run for the acrobot environment:    python acrobot.py
-                                    python acrobot.py --experience_replay
-                                    python acrobot.py --target_network
-                                    python acrobot.py --experience_replay --target_network
-
+- Single run of the Actor-Critic algorithm:    
+    - python actor_critic.py
+    - python actor_critic.py --bootstr
+    - python actor_critic.py --basesub
+    - python actor_critic.py --bootstr --basesub
+    
 
 ## License
 MIT License
