@@ -53,7 +53,7 @@ class LearningCurvePlot:
         self.fig.savefig(name, dpi=300)
 
 def get_height(rows: int = 7, speed: float = 1):
-    """returns value for the maximal reward possible in the environent, depending on the number of rows
+    """returns value for the maximal reward possible in the environment, depending on the number of rows
     and speed of new balls being dropped
     :param rows: number of rows in the environment
     :param speed: speed setting of the environment
@@ -110,7 +110,7 @@ def plot_smooth(exp, smooth_win):
             plot_title = 'Actor Critic with Bootstrapping'
         legend_title = r'learning rate, $\eta$'
         central_path = file_dir + r'\RL3\learning_rate_and_eta' + chr(92) + exp + ' new'
-    elif 'n_boot' in exp:
+    elif 'n_boot' in exp:  # bootstrapping experiments
         legend_title = 'Number of samples'
         central_path = file_dir + r'\RL3' + chr(92) + exp
         if 'AC_baseline' in exp:
@@ -152,7 +152,7 @@ def plot_smooth(exp, smooth_win):
             learning_curve = np.mean(reward_results, axis=0)  # average over repetitions
             if smooth_win != False:
                 learning_curve = smooth(learning_curve, smooth_win)  # additional smoothing
-            learning_curve_std = np.std(reward_results, axis=0)
+            learning_curve_std = np.std(reward_results, axis=0)  # calculate standard deviation for confidence interval
 
             if exp == 'part1_reinforce':
                 plot.add_curve(learning_curve, label=f'{exp_settings[0]}, {exp_settings[1]}')
@@ -208,4 +208,3 @@ if __name__ == '__main__':
         plot.add_hline(height=250/7)
 
     plot.save('AC_eta_0', legend_title=r'$\eta$')
-
