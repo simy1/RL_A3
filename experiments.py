@@ -140,11 +140,25 @@ def experiment(exp):
         print('{} total experiments with combinations: {}'.format(len(combinations), combinations))
 
         for comb in tqdm(combinations):
-            average_over_repetitions(exp,settings,comb)
+            average_over_repetitions(exp, settings, comb)
 
 
 if __name__ == '__main__':
-    exp = 'actorcritic'
-    experiment(exp)
+    # =========== part 1 reinforce =============
+    exp = 'part1_reinforce'
+    # plot_smooth(exp, False)  # plot produced results with different smoothing window
 
-    plot_smooth(exp, False)  # plot produced results with different smoothing window
+
+    # =========== part 1 actor critic =============
+    ac_exps = ['AC_baseline tuning', 'AC_both tuning', 'AC_boot tuning']
+    # for exp in ac_exps:
+    #     plot_smooth(exp, False)  # plot produced results with different smoothing window
+
+
+    # =========== actor critic bootstrap =============
+    bootstrap_exps = ['n_boot\AC_baseline', 'n_boot\AC_boot', 'n_boot\AC_both']
+    # for exp in bootstrap_exps:
+    #     plot_smooth(exp, False)  # plot produced results with different smoothing window
+
+    env_exp = ['vector', 'speed', 'sizes', 'combine']:
+
