@@ -15,17 +15,19 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 import numpy as np
 from gym import spaces   
-
-#-------------------------------------------------------------------
-# my imports
 import torch
 from torch import nn
 from torch import optim
 from tqdm import tqdm
 from catch import Catch
-#-------------------------------------------------------------------
+
 
 class Model():
+    '''
+    Neural network model class. We build a simple NN consisting of 4 layers: a layer that flattens the 
+    input, an input layer, a hidden layer with 128 neurons and an output layer. We use ReLU and Softmax
+    activation functions for the hidden and the output layer, respectively.
+    '''
     def __init__(self, observation_type, rows, columns):
         if observation_type == 'pixel':
             self.n_inputs = rows*columns*2          # array of size [rows x columns x 2]
@@ -47,6 +49,14 @@ class Model():
 
 
 def generateTrace(env, model, entropy_term):
+    '''
+    Generate a trace. Collect triplets of state-action-reward until a terminal condition is met.
+    At every step, we use entropy regularization to maintain our distribution and avoid having an
+    action that dominates the others.
+    param env:              environment used
+    param model:            neural network model
+    param entropy_term:     variable for adding entropies
+    '''
     states_trace,actions_trace,rewards_trace = [],[],[]
     win_loss_ratio = [0,0]
     sum_rewards = 0
@@ -86,6 +96,11 @@ def generateTrace(env, model, entropy_term):
 
 
 def compute_discount_rewards(rewards_list, gamma):
+    '''
+    Compute the discount rewards and then apply normalization.
+    param rewards list:     list of rewards for the current trace
+    param gamma:            gamma value 
+    '''
     disc_rewards = []
     for t in range(len(rewards_list)):
         G = 0.0
@@ -101,6 +116,17 @@ def compute_discount_rewards(rewards_list, gamma):
 
 
 def update_policy(states_list, actions_list, g_list, model, optimizer, eta, entropy_term, print_details):
+    '''
+    Update the policy based on a given trace and the corresponding discount rewards.
+    param states_list:          list of states of the trace
+    param actions_list:         list of actions of the trace
+    param g_list:               list of discount rewards
+    param model:                neural network model
+    param optimizer:            pytorch optimizer (e.g. Adam) 
+    param eta:                  variable for controlling entorpy regularization
+    param entropy term:         entropies collected
+    param print_details:        True/False whether we need to print helpful messages in the console
+    '''
     loss_stored = []
     for state, action, G in zip(states_list, actions_list, g_list):
         probs = model.predict(state)
@@ -125,6 +151,17 @@ def update_policy(states_list, actions_list, g_list, model, optimizer, eta, entr
 
 
 def runReinforceAlgo(env=None, model=None, optimizer=None, gamma=0.9, iterations=1000, eta=0.001, print_details=False):
+    '''
+    Function for running the REINFORCE algorithm. For a number of iterations we do 3 things: (a) generate a trace, 
+    (b) compute the discount rewards and (c) update the policy.
+    param env:              desired environment to un REINFORCE (in our case: Catch environment)
+    param model:            neural network model
+    param optimizer:        pytorch optimizer (e.g. Adam)
+    param gamma:            gamma value (default value=0.9)
+    param iterations:       integet number specifying the number of iterations
+    param eta:              variable for controlling entropy regularization
+    param print_details:    True/False whether we need to print helpful messages in the console 
+    '''
     entropy_term = 0
     rewards_per_episode = []
     # print('Enabling REINFORCE algorithm . . .')
@@ -185,7 +222,11 @@ if __name__ == '__main__':
                                            eta=eta,
                                            print_details=print_details)
     
+    # make a plot
     x_axis = [i for i in range(1,iterations+1)]
     plt.plot(x_axis, rewards_per_episode)
-    plt.savefig('example_graph.png')
+    plt.xlabel("Episodes")
+    plt.ylabel("Total reward per episode")
+    plt.title('REINFORCE')
+    plt.savefig('REINFORCE.png')
     plt.show()
