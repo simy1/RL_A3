@@ -160,5 +160,9 @@ if __name__ == '__main__':
     # for exp in bootstrap_exps:
     #     plot_smooth(exp, False)  # plot produced results with different smoothing window
 
-    env_exp = ['vector', 'speed', 'sizes', 'combine']:
+    env_exp = ['vector', 'speed', 'sizes', 'combine', 'other']
+    for exp in env_exp:
+        print(exp)
+        plot_smooth(exp, False)
+
 

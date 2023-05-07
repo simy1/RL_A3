@@ -52,6 +52,9 @@ class LearningCurvePlot:
         self.ax.legend(bbox_to_anchor=(1, 1), title=legend_title, alignment='left')
         self.fig.savefig(name, dpi=300)
 
+def get_height(rows=7, columns=7, speed=1):
+    return int((250-rows+2) / int(rows/speed))
+
 def smooth(y, window, poly=1):
     '''
     y: vector to be smoothed 
@@ -87,6 +90,7 @@ def saveResults(exp, comb, reward_results):
     a_file.close()
 
 def plot_smooth(exp, smooth_win):
+    print(f'exp = {exp}')
     file_dir = os.path.dirname(__file__)
 
     if exp == 'part1_reinforce':
@@ -112,17 +116,24 @@ def plot_smooth(exp, smooth_win):
         elif 'AC_both' in exp:
             plot_title = 'Actor Critic with Baseline Subtraction and Bootstrapping'
     else:  # environment experiments
-        file_dir + r'\RL3' + chr(92) + 'environment' + chr(92) + exp
+        central_path = file_dir + r'\RL3' + chr(92) + 'environment' + chr(92) + exp
         if exp == 'vector':
-            pass
+            plot_title = "Environment: Varying the Observation Type"
+            legend_title = 'Observation Type'
         elif exp == 'speed':
-            pass
+            plot_title = "Environment: Varying the Speed"
+            legend_title = 'speed'
         elif exp == 'sizes':
-            pass
+            plot_title = "Environment: Varying the Environment Size"
+            legend_title = 'Rows, Columns'
         elif exp == 'combine':
-            pass
-        plot_title = exp
-        legend_title=None
+            central_path = file_dir + r'\RL3' + chr(92) + 'environment' + chr(92) + exp + chr(92) + '2k'
+            plot_title = "Environment: Exploring a Combination of Changes"
+            legend_title = None
+        elif exp == 'other':
+            plot_title = 'Environment: Exploring a change in Width and Speed'
+            legend_title = None
+
     plot = LearningCurvePlot(title=plot_title)
 
     for f in os.listdir(central_path):
@@ -130,6 +141,7 @@ def plot_smooth(exp, smooth_win):
             target_f = central_path + chr(92) + f
             a_file = open(target_f, 'rb')
             x_dict = pickle.load(a_file)
+            print(x_dict)
             reward_results = x_dict[list(x_dict.keys())[0]]
             exp_settings = list(x_dict.keys())[0]
             a_file.close()
@@ -143,15 +155,24 @@ def plot_smooth(exp, smooth_win):
                 plot.add_curve(learning_curve, label=f'{exp_settings[0]}, {exp_settings[1]}')
             elif 'n_boot' in exp:
                 plot.add_curve(learning_curve, label=f'{exp_settings[-1]}')
+            elif exp == 'vector':
+                plot.add_curve(learning_curve, label=f'{exp_settings[5]}')
+            elif exp == 'speed':
+                plot.add_curve(learning_curve, label=f'{exp_settings[-1]}')
+            elif exp == 'sizes':
+                plot.add_curve(learning_curve, label=f'{exp_settings[3]}, {exp_settings[4]}')
             else:
-                plot.add_curve(learning_curve, label=exp_settings)
+                plot.add_curve(learning_curve)  # , label=exp_settings)
 
             plot.add_confidence_interval(learning_curve, learning_curve_std)
 
-    if exp == 'part1_reinforce':
-        plot.add_hline(height=250/7)
-    if 'AC' in exp:
-        plot.add_hline(height=250/7)
+    if exp != 'other':
+        plot.add_hline(height=get_height(rows=7, speed=1))
+    if exp == 'other':
+        plot.add_hline(height=get_height(rows=3, speed=2))
+    if exp == 'sizes':
+        plot.add_hline(height=get_height(rows=10, speed=1))
+        plot.add_hline(height=get_height(rows=3, speed=1))
 
     if 'n_boot' not in exp:
         plot.save('{}_win{}.png'.format(exp, smooth_win), legend_title=legend_title)
@@ -159,4 +180,29 @@ def plot_smooth(exp, smooth_win):
     else:
         plot.save('n_boot{}_win{}.png'.format(exp[7:], smooth_win), legend_title=legend_title)
         plot.save('n_boot{}_win{}.svg'.format(exp[7:], smooth_win), legend_title=legend_title)
+
+
+
+
+if __name__ == '__main__':
+
+    plot = LearningCurvePlot(title=r'Actor Critic with varying $\eta$')
+
+    eta_0_folder = os.path.dirname(__file__) + r'\eta_0' + chr(92)
+    for f in os.listdir(eta_0_folder):
+        print(f)
+        a_file = open(eta_0_folder+f, 'rb')
+        x_dict = pickle.load(a_file)
+        reward_results = x_dict[list(x_dict.keys())[0]]
+        exp_settings = list(x_dict.keys())[0]
+        a_file.close()
+
+        learning_curve = np.mean(reward_results, axis=0)  # average over repetitions
+        learning_curve_std = np.std(reward_results, axis=0)
+
+        plot.add_curve(learning_curve, label=exp_settings[1])
+        plot.add_confidence_interval(learning_curve, learning_curve_std)
+        plot.add_hline(height=250/7)
+
+    plot.save('AC_eta_0', legend_title=r'$\eta$')
 
