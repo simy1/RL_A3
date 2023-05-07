@@ -194,7 +194,7 @@ def plot_smooth(exp, smooth_win):
                 learning_curve = smooth(learning_curve, smooth_win)  # additional smoothing
             learning_curve_std = np.std(reward_results, axis=0)  # calculate standard deviation for confidence interval
 
-            if exp == 'part1_reinforce':
+            if exp == 'part1_reinforce' or 'tuning' in exp:
                 plot.add_curve(learning_curve, label=f'{exp_settings[0]}, {exp_settings[1]}')
             elif 'n_boot' in exp:
                 plot.add_curve(learning_curve, label=f'{exp_settings[-1]}')
