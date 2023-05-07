@@ -14,9 +14,14 @@ from scipy.signal import savgol_filter
 import pickle
 import os
 import os.path
+import sys
 
 class LearningCurvePlot:
-
+    '''
+    A class for handling better a learning curve. This is because #curves = #repetitions for each combination.
+    Also we apply smoothing to every learning curve. 
+    This code is taken from the previous assignment after getting permission.  
+    '''
     def __init__(self, title=None):
         self.fig, self.ax = plt.subplots(figsize=(8, 5), layout="constrained")
         self.ax.set_xlabel('Episode', fontsize=13)
@@ -25,8 +30,6 @@ class LearningCurvePlot:
             self.ax.set_title(title, fontsize=15)
         
     def add_curve(self, y, label=None):
-        ''' y: vector of average reward results
-        label: string to appear as label in plot legend '''
         if label is not None:
             self.ax.plot(y, label=label)
         else:
@@ -52,18 +55,55 @@ class LearningCurvePlot:
         self.ax.legend(bbox_to_anchor=(1, 1), title=legend_title, alignment='left')
         self.fig.savefig(name, dpi=300)
 
+def ckeckCMD():
+    '''
+    Ckeck the command line from the terminal for validity and print the corresponding message (if needed).
+    '''
+    acceptedTokens = ['actor_critic.py','--bootstr','--basesub']
+    if len(sys.argv)<1 or len(sys.argv)>3:
+        return 'error_length'
+    for term in sys.argv:
+        if term not in acceptedTokens:
+            return 'error_term'
+        
+    if len(sys.argv) == 1:
+        return 'AC'
+    elif '--bootstr' in sys.argv and '--basesub' not in sys.argv:
+        return 'BT'
+    elif '--basesub' in sys.argv and '--bootstr' not in sys.argv:
+        return 'BS'
+    elif '--bootstr' in sys.argv and '--basesub' in sys.argv:
+        return 'BT_BS'
+
+def printNotAcceptedCMD(error_msg):
+    '''
+    Print error message in case checkCMD() function returns error code.
+    param error_msg:    the error message from the given error command line 
+    '''
+    if error_msg == 'error_length':
+        print('The command was not accepted due to the following reason: too many/few arguments')
+    if error_msg == 'error_term':
+        print('The command was not accepted due to the following reason: wrong argument(s) given')
+    print('Please follow one of the examples listed below:')
+    print('$ python actor_critic.py')
+    print('$ python actor_critic.py --bootstr')
+    print('$ python actor_critic.py --basesub')
+    print('$ python actor_critic.py --bootstr --basesub')
+
 def get_height(rows: int = 7, speed: float = 1):
-    """returns value for the maximal reward possible in the environment, depending on the number of rows
-    and speed of new balls being dropped
-    :param rows: number of rows in the environment
-    :param speed: speed setting of the environment
-    """
+    '''
+    Returns value for the maximal reward possible in the environment, depending on the number of rows
+    and speed of new balls being dropped.
+    param rows: number of rows in the environment
+    param speed: speed setting of the environment
+    '''
     return int((250-rows+1)/int(rows/speed)+1)
 
 def smooth(y, window, poly=1):
     '''
-    y: vector to be smoothed 
-    window: size of the smoothing window '''
+    Smooth the learning curve with savgol_filter.
+    param y:        vector to be smoothed 
+    param window:   size of the smoothing window '''
     return savgol_filter(y, window, poly)
 
 def make_central_directory(target):
