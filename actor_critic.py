@@ -6,10 +6,14 @@ import torch.optim as optim
 import catch
 import matplotlib.pyplot as plt
 from torch.distributions import Categorical
+from helper import *
 
 class Actor(nn.Module):
-
-
+    '''
+    Actor neural network model class. We build a simple NN for the actor consisting of 3 layers: an input layer, 
+    a hidden layer with 128 neurons and an output layer. We use ReLU and Softmax activation functions for the 
+    hidden and the output layer, respectively.
+    '''
     def __init__(self, n_input, n_actions):
         super(Actor, self).__init__()
 
@@ -26,8 +30,11 @@ class Actor(nn.Module):
         return policy_probs
 
 class Critic(nn.Module):
-
-
+    '''
+    Critic neural network model class. We build a simple NN for the critic consisting of 3 layers: an input layer, 
+    a hidden layer with 128 neurons and an output layer with just one neuron. Although we use a ReLU activation function
+    for the hidden layer, no activation is applied to the output of the model.
+    '''
     def __init__(self, n_input, n_actions):
         super(Critic, self).__init__()
 
@@ -45,7 +52,22 @@ class Critic(nn.Module):
 
 def run_episodes(env, actor, critic, actor_optimizer, critic_optimizer, bootstrap=True, baseline_subtraction=True,
                  n_episodes=1000, n_boot=1, gamma=0.99, entropy_reg_strength=0.01):
-    # define the variables that are used for model evaluation at the end
+    '''
+    Function for running the Actor-Critic algorithm. As we show below, for a number of iterations there are
+    4 steps: (a) sample a trace, (b) compute the estimated cumulative reward, (c) compute and normalize the 
+    loss of the actor and the critic, and (d) update the policy.
+    param env:                      desired environment to un REINFORCE (in our case: Catch environment)     
+    param actor:                    actor neural network model
+    param critic:                   critic neural network model
+    param actor_optimizer:          pytorch optimizer for actor NN (e.g. Adam)
+    param critic_optimizer:         pytorch optimizer for critic NN (e.g. Adam)
+    param bootstrap:                True/False flag for bootstrapping
+    param baseline_subtraction:     True/False flag for baseline_subtraction
+    param n_episodes:               integet number specifying the number of iterations
+    param n_boot:                   number of steps for bootstrapping
+    param gamma:                    gamma value (default value=0.99)
+    param entropy_reg_strength:     variable for controlling entropy regularization
+    '''
     rewards_per_episode = []
     epsilon = np.finfo(np.float32).eps.item()  # smallest possible value that won't get rounded off
     for episode in range(n_episodes):
@@ -62,29 +84,24 @@ def run_episodes(env, actor, critic, actor_optimizer, critic_optimizer, bootstra
             value = critic.forward(state)
             episode_values.append(value)
 
-            # sample action from the policy probability distribution
             m = Categorical(policy_probs)
             action = m.sample()
-            # compute the log of the probability of taking that action
             log_action_prob = m.log_prob(action)
             episode_log_action_prob.append(log_action_prob)
-            # compute the entropy that will be needed for the entropy regularization for exploration
             entropy = -torch.sum(policy_probs * m.log_prob(torch.tensor([0,1,2])))
             episode_entropies.append(entropy)
-            # perform a step with the sampled action
+            
             next_state, reward, terminal, _ = env.step(action)
             episode_rewards.append(reward)
             state = next_state
             state = torch.from_numpy(state.flatten()).float().unsqueeze(0) # convert to tensor
 
-            # break out of the steps if a terminal criterion is reached
             if terminal:
                 value = critic.forward(state)
                 episode_values.append(value)
                 break
 
-        # to track the performance over time
-        rewards_per_episode.append(np.sum(episode_rewards))
+        rewards_per_episode.append(np.sum(episode_rewards))     # track the performance
 
         # compute the estimated cumulative reward
         estimated_Q_values = []
@@ -112,8 +129,7 @@ def run_episodes(env, actor, critic, actor_optimizer, critic_optimizer, bootstra
         actor_losses = []
         critic_losses = []
         advantages = []
-        if baseline_subtraction:
-            # compute and normalize the advantage
+        if baseline_subtraction:                        # compute and normalize the advantage
             for t in range(len(estimated_Q_values)):
                 estimated_Q_t = estimated_Q_values[t]
                 episode_values_t = episode_values[t]
@@ -123,8 +139,7 @@ def run_episodes(env, actor, critic, actor_optimizer, critic_optimizer, bootstra
             advantages = (advantages - advantages.mean()) / (advantages.std() + epsilon)
             for t in range(len(estimated_Q_values)):
                 actor_losses.append(-episode_log_action_prob[t] * advantages[t] - entropy_reg_strength * episode_entropies[t])
-        else:
-            # normalize the estimated cumulative reward
+        else:                                           # normalize the estimated cumulative reward
             estimated_Q_values = torch.tensor(estimated_Q_values)
             estimated_Q_values = (estimated_Q_values - estimated_Q_values.mean()) / (estimated_Q_values.std() + epsilon)
             for t in range(len(estimated_Q_values)):
@@ -169,12 +184,25 @@ if __name__ == '__main__':
     actor_optimizer = optim.Adam(actor.parameters(), lr=learning_rate)
     critic_optimizer = optim.Adam(critic.parameters(), lr=learning_rate)
 
+    response = ckeckCMD()
+    if 'error' in response:
+        printNotAcceptedCMD(response)
+        exit()
+    activate_BT = False
+    activate_BS = False
+    if 'BT' in response:
+        activate_BT = True
+    if 'BS' in response:
+        activate_BS = True  
+
     # perform the algorithm
+    print('Enabling Actor-Critic (Bootstrap={},Baseline Subtraction={})'.format(activate_BT,activate_BS))
     rewards_per_episode = run_episodes(env=env, actor=actor, critic=critic, actor_optimizer=actor_optimizer,
-                                       critic_optimizer=critic_optimizer, bootstrap=True, baseline_subtraction=True,
+                                       critic_optimizer=critic_optimizer, bootstrap=activate_BT, baseline_subtraction=activate_BS,
                                        n_episodes=1000, n_boot=5, gamma=0.99, entropy_reg_strength=0.1)
 
-    # temporary performance check
+    # make a plot
     plt.figure()
     plt.plot(range(len(rewards_per_episode)), rewards_per_episode)
+    plt.savefig('Actor-Critic.png')
     plt.show()
