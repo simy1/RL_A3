@@ -176,6 +176,9 @@ def plot_smooth(exp, smooth_win):
     if exp == 'sizes':
         plot.add_hline(height=get_height(rows=10, speed=1))
         plot.add_hline(height=get_height(rows=3, speed=1))
+    if exp == 'speed':
+        plot.add_hline(height=get_height(rows=7, speed=2))
+        plot.add_hline(height=get_height(rows=7, speed=0.5))
 
     if 'n_boot' not in exp:
         plot.save('{}_win{}.png'.format(exp, smooth_win), legend_title=legend_title)
