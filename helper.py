@@ -235,7 +235,7 @@ if __name__ == '__main__':
     plot = LearningCurvePlot(title=r'Actor Critic with varying $\eta$')
 
     eta_0_folder = os.path.dirname(__file__) + r'\eta_0' + chr(92)
-    for f in os.listdir(eta_0_folder):
+    for i, f in enumerate(os.listdir(eta_0_folder)):
         print(f)
         a_file = open(eta_0_folder+f, 'rb')
         x_dict = pickle.load(a_file)
@@ -246,8 +246,9 @@ if __name__ == '__main__':
         learning_curve = np.mean(reward_results, axis=0)  # average over repetitions
         learning_curve_std = np.std(reward_results, axis=0)
 
+
         plot.add_curve(learning_curve, label=exp_settings[1])
         plot.add_confidence_interval(learning_curve, learning_curve_std)
-        plot.add_hline(height=250/7)
+        plot.add_hline(height=get_height(rows=7, speed=1))
 
     plot.save('AC_eta_0', legend_title=r'$\eta$')
