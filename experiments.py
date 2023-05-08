@@ -19,6 +19,12 @@ from actor_critic import *
 
 
 def average_over_repetitions(exp, settings, comb):
+    '''
+    Get the experimental setup and run for a number of repetitinos the experiment. Save the results at the end.
+    param exp:          name of the experiment
+    param settings:     parameters that stay the same 
+    param comb:         parameters that we want to change
+    '''
 
     reward_results = []  # Result array
     now = time.time()
@@ -71,6 +77,12 @@ def average_over_repetitions(exp, settings, comb):
 
 
 def experiment(exp):
+    '''
+    Setup of the different experiments so as to know which of the parameters and hyperparameters need to 
+    stay the same and which should change in each experiment.
+    param exp:      name of the experiment
+    '''
+
     if exp == 'reinforce':
         # settings (fixed/constant during experiments)
         settings = dict()
