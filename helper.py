@@ -181,7 +181,7 @@ def plot_smooth(exp, smooth_win):
     plot = LearningCurvePlot(title=plot_title)
 
     for f in os.listdir(central_path):
-        if '.pkl' in f:
+        if '.pkl' in f and '0.0001' not in f:
             target_f = central_path + chr(92) + f
             a_file = open(target_f, 'rb')
             x_dict = pickle.load(a_file)
@@ -209,7 +209,7 @@ def plot_smooth(exp, smooth_win):
 
             plot.add_confidence_interval(learning_curve, learning_curve_std)
 
-    if exp != 'other':
+    if exp != 'other' and exp != 'combine':
         plot.add_hline(height=get_height(rows=7, speed=1))
     if exp == 'other':
         plot.add_hline(height=get_height(rows=7, speed=2))
@@ -219,6 +219,8 @@ def plot_smooth(exp, smooth_win):
     if exp == 'speed':
         plot.add_hline(height=get_height(rows=7, speed=2))
         plot.add_hline(height=get_height(rows=7, speed=0.5))
+    if exp == 'combine':
+         plot.add_hline(height=get_height(rows=7, speed=0.5))
 
     if 'n_boot' not in exp:
         plot.save('{}_win{}.png'.format(exp, smooth_win), legend_title=legend_title)
