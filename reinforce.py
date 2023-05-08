@@ -3,11 +3,12 @@
 
 
 import matplotlib
-matplotlib.use('TkAgg') #'Qt5Agg') # 'TkAgg'
+
+matplotlib.use('TkAgg')  # 'Qt5Agg') # 'TkAgg'
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 import numpy as np
-from gym import spaces   
+from gym import spaces
 import torch
 from torch import nn
 from torch import optim
@@ -21,12 +22,13 @@ class Model():
     input, an input layer, a hidden layer with 128 neurons and an output layer. We use ReLU and Softmax
     activation functions for the hidden and the output layer, respectively.
     '''
+
     def __init__(self, observation_type, rows, columns):
         if observation_type == 'pixel':
-            self.n_inputs = rows*columns*2          # array of size [rows x columns x 2]
+            self.n_inputs = rows * columns * 2  # array of size [rows x columns x 2]
         elif observation_type == 'vector':
-            self.n_inputs = 3                       # [x_paddle,x_lowest_ball,y_lowest_ball]
-        self.n_outputs = 3                          # distribution over actions
+            self.n_inputs = 3  # [x_paddle,x_lowest_ball,y_lowest_ball]
+        self.n_outputs = 3  # distribution over actions
         self.n_hidden = [128]
 
         self.neuralnetwork = nn.Sequential()
@@ -50,8 +52,8 @@ def generateTrace(env, model, entropy_term):
     param model:            neural network model
     param entropy_term:     variable for adding entropies
     '''
-    states_trace,actions_trace,rewards_trace = [],[],[]
-    win_loss_ratio = [0,0]
+    states_trace, actions_trace, rewards_trace = [], [], []
+    win_loss_ratio = [0, 0]
     sum_rewards = 0
     done = False
     state = torch.tensor(env.reset(), dtype=torch.float)
@@ -60,7 +62,7 @@ def generateTrace(env, model, entropy_term):
         probs = model.predict(state)
         distribution = torch.distributions.Categorical(probs=probs)
         action = distribution.sample().item()
-        state_next,reward,done,_ = env.step(action)
+        state_next, reward, done, _ = env.step(action)
         # env.render(step_pause)          # visualize the procedure during training
 
         if reward == 0:
@@ -73,7 +75,7 @@ def generateTrace(env, model, entropy_term):
 
         # for entropy regularization
         # entropy = -np.sum(np.mean(np.array(probs)) * np.log(np.array(probs)))
-        smoothing_value = 1.0e-10       # smoothing value to avoid calculating log of zero (=infinity)
+        smoothing_value = 1.0e-10  # smoothing value to avoid calculating log of zero (=infinity)
         probs = probs.detach().numpy()
         smoothed_probs = np.where(probs != 0, probs, smoothing_value)
         entropy = -np.sum(np.array(smoothed_probs) * np.log(np.array(smoothed_probs)))
@@ -85,7 +87,7 @@ def generateTrace(env, model, entropy_term):
 
         state = torch.tensor(state_next, dtype=torch.float)
 
-    return states_trace,actions_trace,rewards_trace, win_loss_ratio, entropy_term, sum_rewards
+    return states_trace, actions_trace, rewards_trace, win_loss_ratio, entropy_term, sum_rewards
 
 
 def compute_discount_rewards(rewards_list, gamma):
@@ -97,8 +99,8 @@ def compute_discount_rewards(rewards_list, gamma):
     disc_rewards = []
     for t in range(len(rewards_list)):
         G = 0.0
-        for k,r in enumerate(rewards_list[t:]):
-            G += (gamma**k)*r
+        for k, r in enumerate(rewards_list[t:]):
+            G += (gamma ** k) * r
         disc_rewards.append(G)
 
     # normalization
@@ -126,7 +128,7 @@ def update_policy(states_list, actions_list, g_list, model, optimizer, eta, entr
         distribution = torch.distributions.Categorical(probs=probs)
         log_prob = distribution.log_prob(action)
 
-        loss = - log_prob*G
+        loss = - log_prob * G
         loss = loss - eta * entropy_term
 
         if print_details:
@@ -136,14 +138,15 @@ def update_policy(states_list, actions_list, g_list, model, optimizer, eta, entr
         loss_stored.append(loss)
 
         optimizer.zero_grad()
-        loss.backward()         # calculate gradients
-        optimizer.step()        # apply gradients
+        loss.backward()  # calculate gradients
+        optimizer.step()  # apply gradients
 
     if print_details:
         print('losses found: ', loss_stored)
 
 
-def runReinforceAlgo(env=None, model=None, optimizer=None, gamma=0.9, iterations=1000, eta=0.001, print_details=False, calculate_variance=False):
+def runReinforceAlgo(env=None, model=None, optimizer=None, gamma=0.9, iterations=1000, eta=0.001, print_details=False,
+                     calculate_variance=False):
     '''
     Function for running the REINFORCE algorithm. For a number of iterations we do 3 things: (a) generate a trace, 
     (b) compute the discount rewards and (c) update the policy.
@@ -167,34 +170,74 @@ def runReinforceAlgo(env=None, model=None, optimizer=None, gamma=0.9, iterations
         states_list, actions_list, rewards_list = [], [], []
 
         # generate a trace
-        states_list, actions_list, rewards_list, win_loss_ratio, entropy_term, sum_rewards = generateTrace(env=env, model=model, entropy_term=entropy_term)
+        states_list, actions_list, rewards_list, win_loss_ratio, entropy_term, sum_rewards = generateTrace(env=env,
+                                                                                                           model=model,
+                                                                                                           entropy_term=entropy_term)
         rewards_per_episode.append(sum_rewards)
         if print_details:
-            print('Trace genrated . . . Done --> Length of trace: {} - win/loss ratio: {}/{}'.format(len(states_list), win_loss_ratio[0], win_loss_ratio[1]))
+            print('Trace genrated . . . Done --> Length of trace: {} - win/loss ratio: {}/{}'.format(len(states_list),
+                                                                                                     win_loss_ratio[0],
+                                                                                                     win_loss_ratio[1]))
 
         # compute discount rewards 
         # print('Computing G . . .')
         g_list = []
         g_list = compute_discount_rewards(rewards_list=rewards_list, gamma=gamma)
 
-        if calculate_variance
+        if calculate_variance:
             state_dict = model.neuralnetwork.state_dict()
             for i, (layer_name, layer_params) in enumerate(state_dict.items()):
                 layer = np.array(layer_params)
                 layer_means[i, iteration] = np.mean(layer)
 
-
         # update the policy
         # print('Updating the policy . . .')
-        update_policy(states_list=states_list, actions_list=actions_list, g_list=g_list, model=model, optimizer=optimizer, eta=eta, entropy_term=entropy_term, print_details=print_details)
+        update_policy(states_list=states_list, actions_list=actions_list, g_list=g_list, model=model,
+                      optimizer=optimizer, eta=eta, entropy_term=entropy_term, print_details=print_details)
 
     if calculate_variance:
         return layer_means
 
     return rewards_per_episode
 
-def calculate_reinforce_variance(num_runs = 10):
 
+def calculate_reinforce_variance(env=None, model=None, optimizer=None, gamma=0.9, iterations=1000, eta=0.001, print_details=False,
+                                 num_runs: int = 10):
+
+    num_layers = 4
+    all_layer_means = np.zeros((num_layers, iterations, num_runs))
+    layer_names = ['input_hid.weight', 'input_hid.bias', 'hid_output.weight', 'hid_output.bias']
+    layer_names = ['input layer: weights', 'input layer: bias', 'output layer: weights', 'output layer: bias']
+
+    for run in tqdm(range(num_runs)):
+        layer_means = runReinforceAlgo(env=env,
+                         model=model,
+                         optimizer=optimizer,
+                         gamma=gamma,
+                         iterations=iterations,
+                         eta=eta,
+                         print_details=print_details,
+                         calculate_variance=True)
+
+        all_layer_means[:, :, run] = layer_means
+
+    fig, ax = plt.subplots(figsize=(9, 5), layout="constrained")
+
+    for l in range(num_layers):
+        layer_weight_av = np.mean(all_layer_means[l, :, :], axis=1)
+        layer_weight_std = np.std(all_layer_means[l, :, :], axis=1)
+
+        ax.plot(layer_weight_av, label=layer_names[l])
+        ax.fill_between(x=range(iterations), y1=layer_weight_av-layer_weight_std, y2=layer_weight_av+layer_weight_std, alpha=0.2)
+
+    ax.legend(bbox_to_anchor=(1, 1), title='Layer', alignment='left')
+    ax.set_xlabel('Iteration', fontsize=13)
+    ax.set_ylabel('Average Weight', fontsize=13)
+    ax.set_title(f'Average Model Weights over {num_runs} independent iterations', fontsize=15)
+
+    fig.savefig('variance.png', dpi=300)
+    fig.savefig('variance.svg', dpi=300)
+    # fig.show()
 
 
 if __name__ == '__main__':
@@ -204,7 +247,7 @@ if __name__ == '__main__':
     speed = 1.0
     max_steps = 250
     max_misses = 10
-    observation_type = 'pixel'      # 'vector'
+    observation_type = 'pixel'  # 'vector'
     seed = None
     gamma = 0.99
     lr = 0.001
@@ -219,21 +262,21 @@ if __name__ == '__main__':
     model = Model(observation_type, rows, columns)
 
     optimizer = optim.Adam(model.neuralnetwork.parameters(), lr=lr)
-    
+
     # Run REINFORCE
     iterations = 10  # 1_000
     eta = 0.25
-    print_details = True  # False
+    print_details = False
     rewards_per_episode = runReinforceAlgo(env=env,
-                                           model=model, 
+                                           model=model,
                                            optimizer=optimizer,
                                            gamma=gamma,
-                                           iterations=iterations, 
+                                           iterations=iterations,
                                            eta=eta,
                                            print_details=print_details)
-    
+
     # make a plot
-    x_axis = [i for i in range(1,iterations+1)]
+    x_axis = [i for i in range(1, iterations + 1)]
     plt.plot(x_axis, rewards_per_episode)
     plt.xlabel("Episodes")
     plt.ylabel("Total reward per episode")
@@ -241,8 +284,8 @@ if __name__ == '__main__':
     plt.savefig('REINFORCE.png')
     plt.show()
 
-
     # ======================================================================================================
     # does reinforce suffer from high variance?
-    num_independent_runs = 10
+    calculate_reinforce_variance(env=env, model=model, optimizer=optimizer, gamma=gamma, iterations=1000,
+                                 eta=eta, print_details=print_details, num_runs=10)
 
